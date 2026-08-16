@@ -68,7 +68,13 @@ export async function serveStatic(
   }
   const serveIndex = async (): Promise<void> => {
     const body = await renderIndex()
-    res.writeHead(200, { 'content-type': MIME['.html'] })
+    // The boot manifest (`window.__DSH_BOOT__`) is injected into index.html
+    // and changes on every bundle rebuild, so browsers must revalidate the
+    // page each load: heuristic caching (which Safari applies aggressively
+    // to uncached responses) would serve a stale manifest whose bundle revs
+    // no longer exist and break plugin loading. Hashed /assets keep long
+    // caching on their own; only the HTML needs this pin.
+    res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-cache' })
     res.end(body)
   }
   if (target === distRoot || target === distIndex) {
