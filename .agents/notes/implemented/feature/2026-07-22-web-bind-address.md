@@ -27,3 +27,7 @@ The HTTP carrier also hides the bind address inside `startWebServer()`, so alter
 ## Consequences
 
 Local `dsh web` starts remain reachable at `http://127.0.0.1:3080`; a browser on another machine must opt in with `dsh web --host 0.0.0.0`. The CLI does not yet expose custom interface addresses or IPv6 modes, while programmatic carrier consumers retain that flexibility. Server tests pin both loopback and all-interface forwarding into the Node listen boundary, and the web smoke continues to exercise the default CLI path.
+
+## Related
+
+The [web all-interfaces host re-enabled note](2026-08-16-web-all-interfaces-host.md) records the current acceptance of `--host 0.0.0.0`.
