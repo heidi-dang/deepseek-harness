@@ -15,6 +15,9 @@
       "path": "../../util/brand"
     },
     {
+      "path": "../../util/uuid"
+    },
+    {
       "path": "../../../vendor/cordis"
     },
     {
