@@ -87,9 +87,10 @@ export function mapStopReason(message: AssistantMessage, contextWindow?: number)
 
   switch (message.stopReason) {
     case 'stop':
-      // A terminal stop that produced no content blocks is a degenerate
-      // provider completion, not a successful (empty) assistant message.
-      if (message.content.length === 0) {
+      // A terminal stop with no user-visible block (text or tool call) is a
+      // degenerate provider completion: reasoning-only content delivers
+      // nothing actionable, exactly like an empty response.
+      if (!message.content.some(block => block.type === 'text' || block.type === 'toolCall')) {
         return {
           kind: 'error',
           failure: {

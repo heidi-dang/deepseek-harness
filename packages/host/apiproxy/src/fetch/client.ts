@@ -67,6 +67,7 @@ import {
   subagentListValueSchema,
   subagentPromptValueSchema,
 } from '../api/subagents.schema.ts'
+import { randomUuid } from '@deepseek-ai/dsh-uuid'
 
 /**
  * Client consumption face of the contract (shape a): same domain tree as ApiProxy, but unary
@@ -296,8 +297,8 @@ export abstract class AbstractApiClient implements IApiClient {
   }
 
   protected mintRpcId(): RpcId {
-    // crypto.randomUUID is a Web API (browser + Node ≥19): keeps this base platform-neutral.
-    return RpcId(crypto.randomUUID())
+    // crypto.randomUUID is secure-context-only; randomUuid uses crypto.getRandomValues, exposed on insecure origins too.
+    return RpcId(randomUuid())
   }
 
   /**

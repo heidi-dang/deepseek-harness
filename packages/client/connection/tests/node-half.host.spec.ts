@@ -74,7 +74,7 @@ function fakeResponse(): { response: ServerResponse; state: { status?: number; b
   return { response, state }
 }
 
-async function mounted(config?: { trustedHosts?: string[] }): Promise<{
+async function mounted(config?: { trustedHosts?: string[]; privilegedTrustedHosts?: string[] }): Promise<{
   routes: WebRoute[]
   upgrades: WebUpgradeRoute[]
   dispose: () => Promise<void>
@@ -189,6 +189,52 @@ describe('connection node half', () => {
     const read = fakeResponse()
     await routes[0]!.handler(fakeRequest({ host: 'harness.example' }), read.response)
     expect(read.state.status).not.toBe(403)
+    await dispose()
+  })
+
+  it('grants privileged methods to a declared privileged authority', async () => {
+    const { routes, dispose } = await mounted({
+      trustedHosts: ['harness.example'],
+      privilegedTrustedHosts: ['harness.example'],
+    })
+    // The same authority now passes the privileged-method pin too; the empty
+    // proxy yields carrier-level 404 past the bridge, proving the pin — not
+    // just the fence — opened.
+    for (const method of [
+      'host.pickDirectory', 'host.openPath',
+      'settings.describe', 'settings.openDocument', 'settings.update', 'settings.replace', 'settings.mutate',
+      'credentials.describe', 'credentials.set', 'credentials.unset',
+      'llm.discoverModels',
+      'agentPreset.read', 'agentPreset.copy', 'agentPreset.openDocument', 'agentPreset.remove',
+    ]) {
+      const granted = fakeResponse()
+      await routes[0]!.handler(
+        fakeRequest({ host: 'harness.example' }, `${API_PATH}/${method}`),
+        granted.response,
+      )
+      expect(granted.state.status).not.toBe(403)
+    }
+    const read = fakeResponse()
+    await routes[0]!.handler(fakeRequest({ host: 'harness.example' }), read.response)
+    expect(read.state.status).not.toBe(403)
+    await dispose()
+  })
+
+  it('keeps privileged methods loopback-only when only the fence trusts the authority', async () => {
+    const { routes, dispose } = await mounted({ trustedHosts: ['harness.example'] })
+    const denied = fakeResponse()
+    await routes[0]!.handler(
+      fakeRequest({ host: 'harness.example' }, `${API_PATH}/settings.describe`),
+      denied.response,
+    )
+    expect(denied.state.status).toBe(403)
+    expect(denied.state.body).toBe('forbidden')
+    const loopback = fakeResponse()
+    await routes[0]!.handler(
+      fakeRequest({ host: '127.0.0.1' }, `${API_PATH}/settings.describe`),
+      loopback.response,
+    )
+    expect(loopback.state.status).not.toBe(403)
     await dispose()
   })
 

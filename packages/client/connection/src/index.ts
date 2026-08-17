@@ -57,17 +57,31 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Authorities allowed past the privileged-method pin (settings/credentials/
+   * agent-preset management and model discovery). Empty (the default) keeps
+   * every privileged method loopback-only. This grant is separate from
+   * `trustedHosts` by design: the fence is a DNS-rebinding defense, not
+   * authentication, so opening the configuration plane requires an explicit
+   * named grant here. An entry that is not a bare, canonical authority fails
+   * the plugin load.
+   */
+  privilegedTrustedHosts?: string[]
   /** Maximum buffered JSON body for every `/api` request. */
   maxRequestBodyBytes?: number
 }
 
 export const Config: z<ConnectionConfig> = z.object({
   trustedHosts: z.array(String).default([]),
+  privilegedTrustedHosts: z.array(String).default([]),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
 
 /**
- * Methods gated to loopback even on a trusted-host deployment. Native dialogs
+ * Methods loopback-only by default, even on a trusted-host deployment. A
+ * deployment may name authorities in the plugin's `privilegedTrustedHosts`
+ * config (the web CLI's `--trusted-config-host`) to open the configuration
+ * plane to them explicitly; `trustedHosts` alone never does. Native dialogs
  * act on the host machine; the settings and credential domains mutate the
  * user's configuration and secret store, and READING them is equally
  * privileged — `settings.describe` returns every exposed namespace's
@@ -122,18 +136,20 @@ const PRIVILEGED_METHODS = new Set([
  * Mounts the API gateway under the browser transport prefix. Every request on
  * the prefix passes the browser-trust fence first (DNS-rebinding and
  * cross-site defense — [api-request-trust](./api-request-trust.ts));
- * privileged methods additionally pass it with an empty trust list, which
- * pins them to loopback.
+ * privileged methods additionally pass it with the configured
+ * `privilegedTrustedHosts` list, empty (loopback-only) by default.
  * @param ctx - Host plugin context.
  * @param config - resolved plugin config (schema defaults applied).
  */
 export function apply(ctx: Context, config?: ConnectionConfig): void {
   // The Loader resolves schema defaults; hand-built test contexts may pass none.
   const trustedHosts = config?.trustedHosts ?? []
+  const privilegedTrustedHosts = config?.privilegedTrustedHosts ?? []
   const maxRequestBodyBytes = config?.maxRequestBodyBytes ?? DEFAULT_MAX_REQUEST_BODY_BYTES
   // Config boundary: a malformed entry fails the load loudly here rather than
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
+  for (const entry of privilegedTrustedHosts) assertTrustedAuthority(entry)
   if (ctx.get('apiProxy') !== undefined) assertImageBodyCapacity(ctx, maxRequestBodyBytes)
   const connection = new HostConnectionService(ctx, trustedHosts)
   const fetchHandler = connection.createSharedFetchHandler(API_PATH, {
@@ -144,7 +160,7 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
         : undefined
       if (method !== undefined
         && PRIVILEGED_METHODS.has(method)
-        && !isTrustedApiRequest(request, [])) {
+        && !isTrustedApiRequest(request, privilegedTrustedHosts)) {
         return new Response('forbidden', { status: 403 })
       }
       if (request.method === 'GET' && (pathname === MUX_EVENTS_PATH || pathname === HOST_EVENTS_PATH)) {

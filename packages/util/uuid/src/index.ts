@@ -1,8 +1,17 @@
-/** Browser-safe UUID generation for client-side wire correlation. */
+/**
+ * Zero-dependency RFC 4122 version 4 UUID generation for browser and Node.
+ * @module @deepseek-ai/dsh-uuid
+ */
 
 /**
  * Generate an RFC 4122 version 4 UUID without requiring a secure context.
- * @returns a UUID backed by `crypto.getRandomValues()`, which browsers expose on insecure origins.
+ *
+ * `crypto.randomUUID` is a secure-context-only Web API: on a plain-HTTP origin
+ * (a LAN or Tailscale address serving `dsh web`) it is `undefined`, so any
+ * browser code that calls it throws. `crypto.getRandomValues` is exposed on
+ * insecure origins too, so this helper is the safe base for wire correlation
+ * ids, message ids, and draft attachment ids in browser-reachable code.
+ * @returns a UUID backed by `crypto.getRandomValues()`.
  */
 export function randomUuid(): string {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
