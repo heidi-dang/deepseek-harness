@@ -118,3 +118,25 @@
 .overlayLayer > * {
   pointer-events: auto;
 }
+
+@media (max-width: 720px) {
+  .frame {
+    min-height: 100svh;
+  }
+
+  .sidebarCol {
+    border-right: none;
+  }
+
+  .centerCol {
+    width: 100%;
+  }
+
+  .detailsCol {
+    display: none;
+  }
+
+  .handle {
+    display: none;
+  }
+}

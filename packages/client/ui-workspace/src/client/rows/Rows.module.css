@@ -244,6 +244,46 @@
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
+@media (max-width: 720px) {
+  .projectRow,
+  .sessionRow {
+    min-height: 44px;
+    padding-inline: 10px;
+  }
+
+  .projectRow {
+    height: 44px;
+  }
+
+  .sessionRow {
+    height: 44px;
+  }
+
+  .rowActions {
+    gap: 4px;
+  }
+
+  .iconButton {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sessionRow .title,
+  .projectRow .title {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .time {
+    display: none;
+  }
+
+  .sessionRow:hover .time,
+  .sessionRow.menuOpen .time {
+    display: none;
+  }
+}
+
 /* Session drag insert marker: a leading chevron and 2px rule between rows,
    absolutely positioned so it neither resembles a row border nor changes layout. */
 .sessionRow.dropBefore,
