@@ -405,6 +405,16 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Authorities allowed past the privileged-method pin (settings/credentials/
+   * agent-preset management and model discovery). Empty (the default) keeps
+   * every privileged method loopback-only. This grant is separate from
+   * `trustedHosts` by design: the fence is a DNS-rebinding defense, not
+   * authentication, so opening the configuration plane requires an explicit
+   * named grant here. An entry that is not a bare, canonical authority fails
+   * the plugin load.
+   */
+  privilegedTrustedHosts?: string[]
   /** Maximum buffered JSON body for every `/api` request. */
   maxRequestBodyBytes?: number
 }
@@ -2884,6 +2894,8 @@ export interface Config {
   surfaceContext: boolean
   /** Explicit `--trusted-host` authorities from this invocation. */
   trustedHosts: string[]
+  /** Explicit `--trusted-config-host` authorities allowed past the privileged-method pin. */
+  privilegedTrustedHosts: string[]
 }
 ```
 
@@ -3149,3 +3161,4 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-typert-generator` ([`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts))
 - `@deepseek-ai/dsh-typert-protocol` ([`packages/typert/protocol/src/index.ts`](../packages/typert/protocol/src/index.ts))
 - `@deepseek-ai/dsh-typert-registry` ([`packages/typert/registry/src/index.ts`](../packages/typert/registry/src/index.ts))
+- `@deepseek-ai/dsh-uuid` ([`packages/util/uuid/src/index.ts`](../packages/util/uuid/src/index.ts))

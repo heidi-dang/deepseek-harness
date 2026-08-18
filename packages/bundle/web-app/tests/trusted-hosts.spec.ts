@@ -27,8 +27,20 @@ describe('resolveLanTrust', () => {
   })
 
   it('derives nothing for a loopback bind — extras alone stand, no LAN URL to print', () => {
-    expect(resolveLanTrust('127.0.0.1', [])).toEqual({ lanAddresses: [], trustedHosts: [] })
+    expect(resolveLanTrust('127.0.0.1', [])).toEqual({ lanAddresses: [], trustedHosts: [], privilegedTrustedHosts: [] })
     expect(resolveLanTrust('127.0.0.1', ['lab.internal']))
-      .toEqual({ lanAddresses: [], trustedHosts: ['lab.internal'] })
+      .toEqual({ lanAddresses: [], trustedHosts: ['lab.internal'], privilegedTrustedHosts: [] })
+  })
+
+  it('passes an explicit privileged list through unchanged, never derived from the bind', () => {
+    expect(resolveLanTrust('127.0.0.1', [], ['lab.internal']))
+      .toEqual({ lanAddresses: [], trustedHosts: [], privilegedTrustedHosts: ['lab.internal'] })
+    // The all-interfaces bind derives LAN literals into the fence list only;
+    // the privileged grant stays exactly the explicit values.
+    expect(resolveLanTrust('0.0.0.0', [], ['lab.internal'])).toEqual({
+      lanAddresses: ['192.168.1.5', '10.0.0.7'],
+      trustedHosts: ['192.168.1.5', '10.0.0.7'],
+      privilegedTrustedHosts: ['lab.internal'],
+    })
   })
 })

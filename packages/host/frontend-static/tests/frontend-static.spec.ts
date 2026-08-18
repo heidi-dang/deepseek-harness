@@ -118,6 +118,12 @@ describe('real Loader composition', () => {
     untap()
     expect((await request(port, '/')).body).not.toContain('__T__')
 
+    // The boot-manifest page is served no-cache: heuristic caching (Safari's
+    // default for uncached responses) would pin a stale __DSH_BOOT__ whose
+    // bundle revs break plugin loading after a rebuild.
+    const got = await fetch(`http://127.0.0.1:${String(port)}/`)
+    expect(got.headers.get('cache-control')).toBe('no-cache')
+
     // Traversal outside the dist root is 403; non-GET/HEAD is 405.
     expect((await request(port, '/..%2f..%2fetc%2fpasswd')).status).toBe(403)
     expect((await request(port, '/nowhere', { method: 'POST' })).status).toBe(405)

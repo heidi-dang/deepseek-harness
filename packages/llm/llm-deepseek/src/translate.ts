@@ -107,7 +107,11 @@ export async function* translate(payloads: AsyncIterable<string>): AsyncGenerato
       const reason = pendingFinish ?? { kind: 'stop' as const }
       yield {
         type: 'finish',
-        reason: reason.kind === 'stop' && order.length === 0
+        // A stop that opened no user-visible block (text or tool call) is a
+        // degenerate provider completion: reasoning-only output delivers
+        // nothing actionable, exactly like an empty response.
+        reason: reason.kind === 'stop'
+          && !order.some(block => block.kind === 'text' || block.kind === 'tool-call')
           ? {
             kind: 'error',
             failure: { message: 'model returned a completed response with no content', code: EMPTY_RESPONSE_CODE },
