@@ -35,9 +35,7 @@ describe('SidebarRoot.module.css', () => {
     expect(declarations('.regionArea')?.get('margin-right')).toBe(
       'calc(-1 * var(--dsh-sidebar-inline-padding))',
     )
-    expect(declarations('.collapsed .regionArea')?.get('margin-left')).toBe('0')
-    expect(declarations('.collapsed .regionArea')?.get('padding-left')).toBe('0')
-    expect(declarations('.collapsed .regionArea')?.get('margin-right')).toBe('0')
+    expect(declarations('.collapsed .regionArea')?.get('display')).toBe('none')
   })
 
   it('moves the four upper controls while the settings seat only fades', () => {
@@ -58,9 +56,11 @@ describe('SidebarRoot.module.css', () => {
     expect(css).toMatch(/@keyframes rail-fade-in\s*\{\s*from\s*\{\s*opacity: 0;\s*}\s*}/)
   })
 
-  it('gives shell rail controls the same base anchor for their shared translation', () => {
-    expect(declarations('.collapsed .logoRow')?.get('justify-content')).toBe('flex-start')
-    expect(declarations('.collapsed .newSession')?.get('align-self')).toBe('flex-start')
-    expect(declarations('.collapsed .newSession')?.get('width')).toBe('36px')
+  it('leaves only the centered sidebar toggle visible in the compact rail', () => {
+    expect(declarations('.collapsed .logoRow')?.get('justify-content')).toBe('center')
+    expect(declarations('.collapsed .logoRow')?.get('width')).toBe('36px')
+    for (const selector of ['.collapsed .newSession', '.collapsed .regionArea', '.collapsed .footArea']) {
+      expect(declarations(selector)?.get('display')).toBe('none')
+    }
   })
 })

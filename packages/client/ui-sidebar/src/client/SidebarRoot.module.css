@@ -26,7 +26,8 @@
    rail (10px side padding), 12px vertical rhythm, 18px from the rail top to
    the whale's box (24px to the 24-wide whale glyph itself). */
 .root.collapsed {
-  padding: 18px 10px 6px;
+  align-items: center;
+  padding: 12px 6px 6px;
 }
 
 /* Scrollbars in the column are a pointer affordance: the shell adds this
@@ -101,10 +102,11 @@
 }
 
 .collapsed .logoRow {
+  width: 36px;
   height: 36px;
   padding: 0;
-  margin-bottom: 12px;
-  justify-content: flex-start;
+  margin-bottom: 0;
+  justify-content: center;
 }
 
 /* Brand group (figma I133:7632): the full wordmark rides the text ink
@@ -194,6 +196,12 @@
 
 .newSession:hover {
   background: var(--dsw-alias-button-floating-hover);
+}
+
+.collapsed .newSession,
+.collapsed .regionArea,
+.collapsed .footArea {
+  display: none;
 }
 
 .collapsed .newSession {
