@@ -5,7 +5,23 @@ html,
 body,
 #root {
   height: 100%;
+  min-height: 100%;
   margin: 0;
+}
+
+html {
+  min-height: 100dvh;
+  background: var(--dsw-alias-bg-base);
+}
+
+body {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  box-sizing: border-box;
+  overscroll-behavior: none;
 }
 
 body {

@@ -1,0 +1,22 @@
+/* Opt-in Night Owl polish. The token palette remains authoritative; these
+   gradients only add depth to large surfaces and primary affordances. */
+body[data-ds-night-owl] {
+  background-image: linear-gradient(135deg, rgba(130, 170, 255, 0.08), transparent 42%), linear-gradient(315deg, rgba(127, 219, 202, 0.04), transparent 38%);
+  background-attachment: fixed;
+}
+
+body[data-ds-night-owl] button[data-primary],
+body[data-ds-night-owl] [data-primary='true'] {
+  background-image: linear-gradient(135deg, var(--dsw-alias-button-primary-fill), #7fdbca);
+  box-shadow: 0 8px 24px rgba(130, 170, 255, 0.18);
+}
+
+body[data-ds-night-owl] .night-owl-surface {
+  background-image: linear-gradient(145deg, rgba(130, 170, 255, 0.08), transparent 62%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-ds-night-owl] {
+    background-attachment: scroll;
+  }
+}

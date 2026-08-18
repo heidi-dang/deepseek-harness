@@ -3,6 +3,7 @@ import base from '../styles/base.css?inline'
 import designPlatform from '../styles/design-platform.css?inline'
 import scrollbar from '../styles/scrollbar.css?inline'
 import gradientShadowText from '../styles/gradient-shadow-text.css?inline'
+import nightOwl from '../styles/night-owl.css?inline'
 import shiki from '../styles/shiki.css?inline'
 
 const PLUGIN_ID = '@deepseek-ai/dsh-client-ui-theme'
@@ -12,6 +13,7 @@ const STYLES = [
   ['design-platform.css', designPlatform],
   ['scrollbar.css', scrollbar],
   ['gradient-shadow-text.css', gradientShadowText],
+  ['night-owl.css', nightOwl],
   ['shiki.css', shiki],
 ] as const
 

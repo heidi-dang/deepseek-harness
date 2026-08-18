@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-/** AppearanceRow behavior: three cubes, selection follows the persisted
+/** AppearanceRow behavior: four cubes, selection follows the persisted
  * preference, clicks drive setTheme. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -16,6 +16,7 @@ const COPY: Record<string, string> = {
   'appearance.title': 'Appearance',
   'appearance.light': 'Light',
   'appearance.dark': 'Dark',
+  'appearance.nightOwl': 'Night Owl',
   'appearance.system': 'System',
 }
 
@@ -59,6 +60,7 @@ describe('AppearanceRow', () => {
     expect(screen.getByText('Appearance')).toBeDefined()
     expect(pressed(/Dark/)).toBe('true')
     expect(pressed(/Light/)).toBe('false')
+    expect(pressed(/Night Owl/)).toBe('false')
     expect(pressed(/System/)).toBe('false')
   })
 
