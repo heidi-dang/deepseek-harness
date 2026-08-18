@@ -12,6 +12,9 @@ import type { ThemeSnapshot } from '@deepseek-ai/dsh-client-ui-theme/client'
 /** Body attribute selecting the dark base palette in the token stylesheets. */
 export const DARK_ATTRIBUTE = 'data-ds-dark-theme'
 
+/** Body attribute enabling the Night Owl gradient polish sheet (opt-in theme). */
+export const NIGHT_OWL_ATTRIBUTE = 'data-ds-night-owl'
+
 /** Applies theme snapshots to the document; one instance per plugin fiber. */
 export class ThemePresenter {
   /** Token names this presenter wrote in the last apply (its retraction set). */
@@ -40,6 +43,8 @@ export class ThemePresenter {
     const body = document.body
     if (scheme === 'dark') body.setAttribute(DARK_ATTRIBUTE, '')
     else body.removeAttribute(DARK_ATTRIBUTE)
+    if (snapshot.active.id === 'night-owl') body.setAttribute(NIGHT_OWL_ATTRIBUTE, '')
+    else body.removeAttribute(NIGHT_OWL_ATTRIBUTE)
     for (const name of this.appliedTokens) body.style.removeProperty(name)
     this.appliedTokens = []
     for (const [name, value] of Object.entries(snapshot.active.tokens)) {
