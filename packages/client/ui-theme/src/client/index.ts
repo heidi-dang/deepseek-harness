@@ -1,7 +1,7 @@
 /**
  * Browser theme registry over the `--dsw-*` token stylesheets. The service
- * owns the live theme preference (light/dark/system), resolves `system` through
- * `prefers-color-scheme`, and publishes immutable snapshots; it never touches
+ * owns the live theme preference (light/dark/night-owl/system), resolves
+ * `system` through `prefers-color-scheme`, and publishes immutable snapshots; it never touches
  * the DOM — ui-layout's presenter consumes the resolved snapshot. The Host
  * settings scope loads and stores the preference in the user-settings
  * document. The plugin also registers the Appearance preference row into the
