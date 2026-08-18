@@ -11,8 +11,13 @@ type Parser<F> = { parse(value: unknown): F }
 
 /** Browser platform subclass: unary/respond use fetch; mux/host use downlink-only WebSockets. */
 export class WebApiClient extends AbstractApiClient {
-  protected doFetch(input: URL, init?: RequestInit): Promise<Response> {
-    return globalThis.fetch(input, init)
+  protected async doFetch(input: URL, init?: RequestInit): Promise<Response> {
+    try {
+      return await globalThis.fetch(input, init)
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
+      throw new Error(`browser transport failed for ${input.origin}${input.pathname}: ${detail}`, { cause: error })
+    }
   }
 
   protected override openMux(
@@ -62,12 +67,20 @@ export class WebApiClient extends AbstractApiClient {
       this.onEnvelope(full)
       enqueue({ kind: 'frame', envelope: { rpcId: full.rpcId, payload: frame } })
     }
-    const handleClose = (): void => { enqueue({ kind: 'end' }) }
+    let ended = false
+    const end = (): void => {
+      if (ended) return
+      ended = true
+      enqueue({ kind: 'end' })
+    }
+    const handleClose = (): void => { end() }
+    const handleError = (): void => { end() }
     const handleAbort = (): void => {
       if (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) socket.close()
     }
     socket.addEventListener('open', handleOpen)
     socket.addEventListener('message', handleMessage)
+    socket.addEventListener('error', handleError, { once: true })
     socket.addEventListener('close', handleClose, { once: true })
     signal.addEventListener('abort', handleAbort, { once: true })
     if (signal.aborted) handleAbort()
@@ -84,6 +97,7 @@ export class WebApiClient extends AbstractApiClient {
       signal.removeEventListener('abort', handleAbort)
       socket.removeEventListener('open', handleOpen)
       socket.removeEventListener('message', handleMessage)
+      socket.removeEventListener('error', handleError)
       socket.removeEventListener('close', handleClose)
       handleAbort()
     }

@@ -41,6 +41,16 @@ describe('isTrustedApiRequest', () => {
     expect(isTrustedApiRequest(request(headers), [])).toBe(false)
   })
 
+  it('accepts LAN IPv4 and IPv6 authorities for HTTP and WebSocket upgrade headers', () => {
+    for (const [host, origin] of [
+      ['192.168.1.24:3080', 'http://192.168.1.24:3080'],
+      ['[fd00::24]:3080', 'http://[fd00::24]:3080'],
+    ] as const) {
+      expect(isTrustedApiRequest(request({ host, origin, 'sec-fetch-site': 'same-origin' }), [host])).toBe(true)
+      expect(isTrustedApiRequest(request({ host }), [host])).toBe(true)
+    }
+  })
+
   it('matches Host, Origin, and trusted entries through WHATWG normalization (case, default port)', () => {
     expect(isTrustedApiRequest(request({ host: 'Harness.INTERNAL:3080', origin: 'http://harness.internal:3080' }), ['harness.internal:3080'])).toBe(true)
     expect(isTrustedApiRequest(request({ host: 'harness.internal', origin: 'http://harness.internal' }), ['HARNESS.internal:80'])).toBe(true)
