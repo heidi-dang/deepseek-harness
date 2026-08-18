@@ -2,7 +2,8 @@
  * Host-rendered theme bootstrap for the browser's pre-plugin interval. Each
  * index response embeds the current durable built-in preference; the browser
  * resolves only `system`, then writes the same DOM fields ui-layout's
- * ThemePresenter owns after the client plugin tree activates.
+ * ThemePresenter owns after the client plugin tree activates — the dark base
+ * attribute plus the `night-owl` opt-in attribute (a dark-base product theme).
  */
 
 import { DEFAULT_PREFERENCE, type ThemePreference } from './theme-settings.ts'
@@ -14,9 +15,11 @@ function bootThemeScript(preference: ThemePreference): string {
   const systemDark = preference === 'system'
     && typeof matchMedia !== 'undefined'
     && matchMedia('(prefers-color-scheme: dark)').matches
-  const dark = preference === 'dark' || systemDark
+  const nightOwl = preference === 'night-owl'
+  const dark = preference === 'dark' || nightOwl || systemDark
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
   document.body.toggleAttribute('data-ds-dark-theme', dark)
+  document.body.toggleAttribute('data-ds-night-owl', nightOwl)
 })()</script>`
 }
 

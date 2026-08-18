@@ -2,8 +2,12 @@
 
 import z from '@deepseek-ai/schemastery'
 
-/** Built-in preferences accepted at the registry and settings boundaries. */
-export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const
+/**
+ * Built-in preferences accepted at the registry and settings boundaries.
+ * `night-owl` is a durable product theme (a dark-base palette registered in
+ * BUILTIN_THEMES), so it crosses the Host settings schema like `light`/`dark`.
+ */
+export const THEME_PREFERENCES = ['light', 'dark', 'night-owl', 'system'] as const
 
 /** Settings namespace owned by the theme plugin. */
 export const THEME_SETTINGS_NAMESPACE = 'ui-theme'

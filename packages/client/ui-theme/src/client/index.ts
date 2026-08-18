@@ -115,9 +115,65 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
+/**
+ * Night Owl alias/specific token overrides (Sarah Drasner's palette: deep navy
+ * #011627 surfaces, #d6deeb ink, cyan/blue/purple accents). Applied over the
+ * dark base as inline CSS variables; every value stays a solid color so the
+ * `background-color` consumers never go transparent — the gradient polish is a
+ * separate opt-in stylesheet keyed on `body[data-ds-night-owl]`.
+ */
+const NIGHT_OWL_TOKENS: ThemeTokens = Object.freeze({
+  '--dsw-alias-bg-base': '#011627',
+  '--dsw-alias-bg-layer-1': '#0b2942',
+  '--dsw-alias-bg-layer-2': '#0e293f',
+  '--dsw-alias-bg-layer-3': '#123657',
+  '--dsw-alias-bg-module-platform': '#0e293f',
+  '--dsw-alias-bg-overlay': '#0e293f',
+  '--dsw-alias-border-l1': 'rgba(94, 158, 214, 0.10)',
+  '--dsw-alias-border-l2': 'rgba(94, 158, 214, 0.18)',
+  '--dsw-alias-border-l2-darkmode-thin': 'rgba(94, 158, 214, 0.14)',
+  '--dsw-alias-border-l3': 'rgba(94, 158, 214, 0.26)',
+  '--dsw-alias-border-l4': 'rgba(94, 158, 214, 0.34)',
+  '--dsw-alias-label-primary': '#d6deeb',
+  '--dsw-alias-label-primary-dimmed': '#c5cfe0',
+  '--dsw-alias-label-secondary': '#8badc9',
+  '--dsw-alias-label-tertiary': '#5f7e97',
+  '--dsw-alias-label-caption': '#4b6479',
+  '--dsw-alias-brand-primary': '#82aaff',
+  '--dsw-alias-brand-text': '#82aaff',
+  '--dsw-alias-button-primary-fill': '#82aaff',
+  '--dsw-alias-button-primary-hover': '#9cbcff',
+  '--dsw-alias-label-primary-foreground': '#011627',
+  '--dsw-alias-button-info-fill': '#82aaff',
+  '--dsw-alias-button-info-hover': '#9cbcff',
+  '--dsw-alias-interactive-bg-hover': 'rgba(130, 170, 255, 0.10)',
+  '--dsw-alias-interactive-bg-hover-solid': '#0e293f',
+  '--dsw-alias-interactive-bg-active': 'rgba(130, 170, 255, 0.16)',
+  '--dsw-alias-state-business-primary': '#7fdbca',
+  '--dsw-alias-state-success-primary': '#addb67',
+  '--dsw-alias-state-warn-primary': '#ecc48d',
+  '--dsw-alias-state-error-primary': '#ef5350',
+  '--dsw-alias-markdown-code-block': '#010e1a',
+  '--dsw-alias-markdown-code-block-banner': '#0b2942',
+  '--dsw-alias-markdown-inline-code': '#1d3b53',
+  '--dsw-alias-tooltip-bg': '#0e293f',
+  '--dsw-alias-toast-bg': '#0e293f',
+  '--dsw-specific-sidebar-fill': '#01121f',
+  '--dsw-specific-sidebar-nav-item-hover': '#0e293f',
+  '--dsw-specific-sidebar-nav-item-active': '#1d3b53',
+  '--dsw-specific-sidebar-nav-item-active-accent': '#17334d',
+  '--dsw-specific-bubble': '#0e293f',
+  '--dsw-specific-bubble-highlight': '#1d3b53',
+  '--dsw-specific-input-major': '#0b2942',
+  '--dsw-specific-login-input': '#010e1a',
+  '--dsw-specific-selector': '#0e293f',
+  '--dsw-specific-tip': '#0e293f',
+})
+
 const BUILTIN_THEMES: readonly ThemeDefinition[] = Object.freeze([
   Object.freeze({ id: 'light', colorScheme: 'light' as const, tokens: Object.freeze({}) }),
   Object.freeze({ id: 'dark', colorScheme: 'dark' as const, tokens: Object.freeze({}) }),
+  Object.freeze({ id: 'night-owl', colorScheme: 'dark' as const, tokens: NIGHT_OWL_TOKENS }),
 ])
 
 const BUILTIN_INSPECT_TOKENS: readonly ThemeTokenInspection[] = Object.freeze([
