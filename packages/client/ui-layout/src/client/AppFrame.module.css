@@ -122,6 +122,7 @@
 @media (max-width: 720px) {
   .frame {
     min-height: 100svh;
+    height: 100svh;
   }
 
   .sidebarCol {
@@ -130,6 +131,7 @@
 
   .centerCol {
     width: 100%;
+    min-width: 0;
   }
 
   .detailsCol {
@@ -138,5 +140,15 @@
 
   .handle {
     display: none;
+  }
+
+  .overlayLayer {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 420px) {
+  .frame {
+    grid-template-columns: 1fr;
   }
 }

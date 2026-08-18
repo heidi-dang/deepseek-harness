@@ -12,4 +12,23 @@
   --ds-transition-duration: 0.2s;
   --ds-transition-duration-fast: 0.1s;
   --ds-transition-duration-slow: 0.3s;
+  --dsw-focus-ring: 0 0 0 3px color-mix(in srgb, var(--dsw-static-deepseek-500) 28%, transparent);
+  --dsw-mobile-gutter: 16px;
+  --dsw-mobile-touch-target: 44px;
+}
+
+:where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--dsw-focus-ring);
+}
+
+:where(button, a, input, textarea, select) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 720px) {
+  body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
 }

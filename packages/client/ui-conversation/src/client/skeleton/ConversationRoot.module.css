@@ -28,7 +28,7 @@
 .header {
   position: relative;
   flex: none;
-  padding: 12px 28px 0 20px;
+  padding: max(12px, env(safe-area-inset-top)) 28px 0 20px;
   border-bottom: 1px solid transparent;
 }
 
@@ -220,6 +220,39 @@
 
 .root[data-phase='active'] .header {
   flex: none;
+}
+
+@media (max-width: 720px) {
+  .header {
+    padding-right: var(--dsw-mobile-gutter);
+    padding-left: var(--dsw-mobile-gutter);
+  }
+
+  .crumb {
+    max-width: min(42vw, 180px);
+    min-height: var(--dsw-mobile-touch-target);
+    padding-inline: 6px;
+  }
+
+  .tabs {
+    gap: 24px;
+    padding-left: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    min-height: var(--dsw-mobile-touch-target);
+    padding-top: 10px;
+  }
+
+  .composerSeat {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 .scrollBody {

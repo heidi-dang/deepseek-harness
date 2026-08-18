@@ -271,6 +271,36 @@
   width: auto;
 }
 
+@media (max-width: 720px) {
+  .root {
+    padding-top: max(6px, env(safe-area-inset-top));
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .logoRow {
+    height: 52px;
+    margin-bottom: 4px;
+  }
+
+  .iconButton,
+  .collapsed .iconButton {
+    width: var(--dsw-mobile-touch-target);
+    height: var(--dsw-mobile-touch-target);
+  }
+
+  .newSession {
+    min-height: var(--dsw-mobile-touch-target);
+    height: auto;
+    margin-inline: 0;
+    padding-block: 10px;
+  }
+
+  .regionArea {
+    margin-left: -4px;
+    padding-left: 4px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wide,
   .fading > *,
