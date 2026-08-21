@@ -8,6 +8,8 @@ The dsh browser-surface bundle. [`cordis.patch.yml`](cordis.patch.yml) rides ove
 
 Web uses the shared bounded normal default of five eligible retries after the initial request. The `deepseek-official` route and settings-added pi-ai routes use that default when they omit `retryPolicy`; explicit provider policies still win. Web adds no retry-specific composition override, so the same omission behavior applies to non-Web profiles.
 
+The `web-runtime` row auto-discovers the host's Tailscale identity (its `100.x` address, any IPv6 address, and `<device>.ts.net` magic-DNS name) into the `/api` browser-trust fence **for every bind host**. Tailscale is an overlay network, so a loopback-bound server (`--host 127.0.0.1`, the default) is still reachable from another tailnet device through `tailscale serve`/`funnel` at its Tailscale name, and that name is auto-trusted — no manual `--trusted-host` needed. The auto-discovered tailnet also satisfies the privileged-method pin, so a device on your own tailnet can call the configuration plane (`settings.*`, `credentials.*`, agent presets, model discovery) without a manual `--trusted-config-host`; LAN literals never reach that plane. When the server binds `0.0.0.0`, the row additionally samples the machine's non-loopback LAN IPv4 literals (trusted for ordinary methods, not the configuration plane). `--trusted-host` and `--trusted-config-host` still name authorities the auto-discovery misses.
+
 ## Model Experience
 
 ### Harness-source and Web-surface context
@@ -27,7 +29,7 @@ The prompt section sits near the system prompt's head and is stable for the life
 ## Known Limitations and Deferred Work
 
 - **The frontend dist must be built** — `require.resolve` of the dist fails loud at activation with a build hint; there is no source-serving fallback.
-- **`lanAddresses` is a boot-time snapshot** — interface changes after boot are not re-advertised; the printed LAN URL always matches the configured trust fence.
+- **`lanAddresses` is a boot-time snapshot** — interface changes after boot are not re-advertised, including Tailscale connect/disconnect; the printed LAN URL always matches the configured trust fence. Restart `dsh web` after Tailscale first comes up to trust its address.
 - **Only handoff startup is observable** — observation ends when the platform opener accepts spawn, except that Windows waits for its short-lived PowerShell launcher to exit; a later browser exit is not reported, and the printed URL remains the manual fallback.
 - **SSH forwarding owns the browser URL** — the printed canonical URL names the remote host's loopback endpoint; automatic handoff is suppressed, and the SSH client or editor must expose and open its local forwarded address.
 - **Browser command overrides are launch-only** — a discovered `.env` may not set `BROWSER`; only an inherited value may reach an opener path that honors the variable, so a checkout cannot choose an executable for automatic handoff.

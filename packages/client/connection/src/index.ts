@@ -22,6 +22,7 @@ export type {
 export { HostConnectionService } from './rpc-host.ts'
 
 export { API_PATH, HOST_EVENTS_PATH, MUX_EVENTS_PATH } from './api-path.ts'
+export { assertTrustedAuthority } from './api-request-trust.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'client-connection'
@@ -57,30 +58,48 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Authorities allowed past the privileged-method pin (settings/credentials/
+   * agent-preset management and model discovery). The web bundle fills this
+   * with the auto-discovered Tailscale identity (the device's own authenticated
+   * tailnet) plus any explicit `--trusted-config-host` grants; empty keeps
+   * every privileged method loopback-only. This grant is separate from
+   * `trustedHosts`: the basic fence is a DNS-rebinding defense that also admits
+   * LAN literals, whereas the privileged plane deliberately excludes LAN
+   * clients and opens only to the authenticated tailnet and named grants,
+   * because the configuration plane mutates the user's configuration and secret
+   * store. An entry that is not a bare, canonical authority fails the plugin
+   * load.
+   */
+  privilegedTrustedHosts?: string[]
   /** Maximum buffered JSON body for every `/api` request. */
   maxRequestBodyBytes?: number
 }
 
 export const Config: z<ConnectionConfig> = z.object({
   trustedHosts: z.array(String).default([]),
+  privilegedTrustedHosts: z.array(String).default([]),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
 
 /**
- * Methods gated to loopback even on a trusted-host deployment. Native dialogs
- * act on the host machine; the settings and credential domains mutate the
- * user's configuration and secret store, and READING them is equally
- * privileged — `settings.describe` returns every exposed namespace's
- * configuration and `credentials.describe` reports whether an arbitrary
- * environment-variable name is configured and where from, which is
- * reconnaissance no anonymous caller should have. `trustedHosts` is a
- * DNS-rebinding fence, explicitly not authentication, so the whole
- * configuration plane stays loopback-same-origin until a real authentication
- * layer exists. `llm.discoverModels` belongs to that plane on both counts: it
- * carries a draft credential, and it makes the HOST issue a GET to a URL the
- * caller chose and reports back the status or the parsed body — an anonymous
- * LAN caller would have a probe for whatever the host can reach and the
- * browser cannot.
+ * Methods loopback-only by default, even on a trusted-host deployment. A
+ * deployment may name authorities in the plugin's `privilegedTrustedHosts`
+ * config (the web CLI's `--trusted-config-host`, or the auto-discovered
+ * Tailscale identity the web bundle injects) to open the configuration plane
+ * to them; the basic `trustedHosts` fence alone never does, because it also
+ * admits anonymous LAN literals. Native dialogs act on the host machine; the
+ * settings and credential domains mutate the user's configuration and secret
+ * store, and READING them is equally privileged — `settings.describe` returns
+ * every exposed namespace's configuration and `credentials.describe` reports
+ * whether an arbitrary environment-variable name is configured and where from,
+ * which is reconnaissance no anonymous caller should have. The configuration
+ * plane therefore stays loopback-only plus the authenticated tailnet and any
+ * named grants, until a real authentication layer exists. `llm.discoverModels`
+ * belongs to that plane on both counts: it carries a draft credential, and it
+ * makes the HOST issue a GET to a URL the caller chose and reports back the
+ * status or the parsed body — an anonymous LAN caller would have a probe for
+ * whatever the host can reach and the browser cannot.
  *
  * The model catalog (`llm.providers`, `llm.models`) is deliberately NOT here:
  * it carries provider ids, display names, and model lists — no endpoints,
@@ -122,18 +141,20 @@ const PRIVILEGED_METHODS = new Set([
  * Mounts the API gateway under the browser transport prefix. Every request on
  * the prefix passes the browser-trust fence first (DNS-rebinding and
  * cross-site defense — [api-request-trust](./api-request-trust.ts));
- * privileged methods additionally pass it with an empty trust list, which
- * pins them to loopback.
+ * privileged methods additionally pass it with the configured
+ * `privilegedTrustedHosts` list, empty (loopback-only) by default.
  * @param ctx - Host plugin context.
  * @param config - resolved plugin config (schema defaults applied).
  */
 export function apply(ctx: Context, config?: ConnectionConfig): void {
   // The Loader resolves schema defaults; hand-built test contexts may pass none.
   const trustedHosts = config?.trustedHosts ?? []
+  const privilegedTrustedHosts = config?.privilegedTrustedHosts ?? []
   const maxRequestBodyBytes = config?.maxRequestBodyBytes ?? DEFAULT_MAX_REQUEST_BODY_BYTES
   // Config boundary: a malformed entry fails the load loudly here rather than
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
+  for (const entry of privilegedTrustedHosts) assertTrustedAuthority(entry)
   if (ctx.get('apiProxy') !== undefined) assertImageBodyCapacity(ctx, maxRequestBodyBytes)
   const connection = new HostConnectionService(ctx, trustedHosts)
   const fetchHandler = connection.createSharedFetchHandler(API_PATH, {
@@ -144,7 +165,7 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
         : undefined
       if (method !== undefined
         && PRIVILEGED_METHODS.has(method)
-        && !isTrustedApiRequest(request, [])) {
+        && !isTrustedApiRequest(request, privilegedTrustedHosts)) {
         return new Response('forbidden', { status: 403 })
       }
       if (request.method === 'GET' && (pathname === MUX_EVENTS_PATH || pathname === HOST_EVENTS_PATH)) {

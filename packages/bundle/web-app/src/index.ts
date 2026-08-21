@@ -13,11 +13,13 @@
 
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createRequire } from 'node:module'
+import { execFileSync } from 'node:child_process'
 import { networkInterfaces } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { addHarnessSourceSection } from '@deepseek-ai/dsh-app-boot'
+import { assertTrustedAuthority } from '@deepseek-ai/dsh-client-connection'
 import * as FrontendStatic from '@deepseek-ai/dsh-host-frontend-static'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
@@ -25,6 +27,9 @@ import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-shell-env'
+
+/** Bound time for one best-effort Tailscale discovery probe. */
+const TAILSCALE_DISCOVERY_TIMEOUT_MS = 500
 
 /** Stable Cordis plugin name. */
 export const name = 'web-app'
@@ -53,6 +58,8 @@ export interface Config {
   surfaceContext: boolean
   /** Explicit `--trusted-host` authorities from this invocation. */
   trustedHosts: string[]
+  /** Explicit `--trusted-config-host` authorities allowed past the privileged-method pin. */
+  privilegedTrustedHosts: string[]
 }
 
 export const Config: z<Config> = z.object({
@@ -60,14 +67,17 @@ export const Config: z<Config> = z.object({
   printUrl: z.boolean().default(true),
   surfaceContext: z.boolean().default(true),
   trustedHosts: z.array(String).default([]),
+  privilegedTrustedHosts: z.array(String).default([]),
 })
 
 /** Bind-dependent Web values shared by the trust fence and URL display. */
 export interface WebRuntimeValues {
-  /** LAN IPv4 literals sampled once when the server binds all interfaces. */
+  /** Non-loopback LAN IPv4 literals plus auto-discovered Tailscale authorities, sampled once at bind. */
   lanAddresses: string[]
-  /** LAN literals followed by explicit invocation authorities. */
+  /** LAN literals and Tailscale authorities followed by explicit invocation authorities. */
   trustedHosts: string[]
+  /** Auto-discovered Tailscale authorities plus explicit `--trusted-config-host` grants, allowed past the privileged-method pin. */
+  privilegedTrustedHosts: string[]
 }
 
 /** Environment variable naming the canonical local URL of this Web GUI. */
@@ -120,22 +130,104 @@ try {
 `
 
 /**
+ * Bare web-transport authorities for this machine's Tailscale identity,
+ * sampled from the live Tailscale daemon. A browser reaching `dsh web` from
+ * another tailnet device — by the device's `100.x` address or its
+ * `<device>.ts.net` magic-DNS name, whether the server is bound to loopback
+ * (reached through `tailscale serve`/`funnel`) or to all interfaces — then
+ * passes the `/api` browser-trust fence without a manual `--trusted-host`.
+ * Tailscale is an overlay network, so these authorities are sampled
+ * independently of the webserver bind host; a `127.0.0.1`-bound server is
+ * still reachable at its Tailscale name, and a host left untaken at sample
+ * time is otherwise refused (HTTP 403, surfaced client-side as a transport
+ * error).
+ *
+ * Best-effort: when Tailscale is absent, not running, or unreachable, returns
+ * []. Every candidate is canonicalized (IPv6 bracketed, trailing FQDN dot
+ * stripped) and validated through the same `assertTrustedAuthority` the fence
+ * uses, so an unexpected shape can never reach the fence and fail the plugin
+ * load; it is skipped instead.
+ * @returns bare host or host:port authorities.
+ */
+function sampleTailscaleAuthorities(): string[] {
+  let raw: string
+  try {
+    raw = execFileSync('tailscale', ['status', '--json'], {
+      timeout: TAILSCALE_DISCOVERY_TIMEOUT_MS,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).toString()
+  } catch {
+    return []
+  }
+  let status: { Self?: unknown }
+  try {
+    status = JSON.parse(raw) as { Self?: unknown }
+  } catch {
+    return []
+  }
+  const self = status.Self
+  if (!isPlainObject(self)) return []
+  const authorities = new Set<string>()
+  if (Array.isArray(self.TailscaleIPs)) {
+    for (const ip of self.TailscaleIPs) {
+      if (typeof ip !== 'string') continue
+      authorities.add(ip.includes(':') ? `[${ip}]` : ip)
+    }
+  }
+  if (typeof self.DNSName === 'string' && self.DNSName.length > 0) {
+    authorities.add(self.DNSName.replace(/\.$/u, ''))
+  }
+  const accepted: string[] = []
+  for (const authority of authorities) {
+    try {
+      assertTrustedAuthority(authority)
+      accepted.push(authority)
+    } catch {
+      // An unexpected Tailscale authority shape must not reach the fence and
+      // fail the plugin load; skip rather than trust or crash.
+    }
+  }
+  return accepted
+}
+
+/**
  * Resolve one LAN-trust snapshot from the active server bind.
  *
- * Derived entries are port-less IP literals: DNS rebinding needs an
- * attacker-controlled name, while an IP-literal Host is safe on any port and
- * an OS-assigned port is unknowable before bind.
+ * Derived entries are port-less IP literals and DNS names: DNS rebinding needs
+ * an attacker-controlled name, while an IP-literal Host is safe on any port
+ * and an OS-assigned port is unknowable before bind. Tailscale authorities are
+ * appended (sampled from the live daemon regardless of bind host) so a browser
+ * on another Tailscale device reaches the GUI without a manual `--trusted-host`.
  * @param bindHost - the active webserver bind host.
  * @param extra - explicit `--trusted-host` values, in argument order.
+ * @param privileged - explicit authorities granted configuration-plane access; passed through, never derived.
  * @returns the LAN display addresses and invocation-derived fence authorities.
  */
-export function resolveLanTrust(bindHost: string, extra: readonly string[]): WebRuntimeValues {
-  const lanAddresses = bindHost === ALL_INTERFACES_HOST
+export function resolveLanTrust(bindHost: string, extra: readonly string[], privileged: readonly string[] = []): WebRuntimeValues {
+  const lanInterfaces = bindHost === ALL_INTERFACES_HOST
     ? Object.values(networkInterfaces()).flat()
       .filter((iface): iface is NonNullable<typeof iface> => iface !== undefined && iface.family === 'IPv4' && !iface.internal)
       .map(iface => iface.address)
     : []
-  return { lanAddresses, trustedHosts: [...lanAddresses, ...extra] }
+  // Tailscale is an overlay network: reachable even on a loopback-bound server
+  // (via `tailscale serve`/`funnel`), so sample it independent of the bind host.
+  const tailscale = sampleTailscaleAuthorities()
+  const lanAddresses = [...lanInterfaces, ...tailscale]
+  // The basic `/api` fence trusts every derived authority. The privileged-method
+  // pin opens only to the authenticated tailnet plus explicit grants: a LAN
+  // client may read the model catalog but never manage settings, credentials,
+  // or presets, while a device on the same tailnet may.
+  return {
+    lanAddresses,
+    trustedHosts: [...lanAddresses, ...extra],
+    privilegedTrustedHosts: [...tailscale, ...privileged],
+  }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object') return false
+  const prototype = Object.getPrototypeOf(value) as object | null
+  return prototype === null || prototype === Object.prototype
 }
 
 /** Model-visible orientation and acceptance boundary for sessions created through `dsh web`. */
@@ -224,7 +316,7 @@ export const internals: {
  * @param config - validated {@link Config}.
  */
 export function apply(ctx: Context, config: Config): void {
-  const runtime = resolveLanTrust(ctx.webServer.host, config.trustedHosts)
+  const runtime = resolveLanTrust(ctx.webServer.host, config.trustedHosts, config.privilegedTrustedHosts)
   // The loopback URL belongs to this host. Under SSH, the operator reaches it
   // through a local forwarding address that this process cannot derive.
   const handoffBrowser = config.openBrowser && !launchedThroughSsh(ctx)

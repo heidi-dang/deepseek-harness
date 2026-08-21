@@ -30,6 +30,9 @@
       "path": "../../host/webserver"
     },
     {
+      "path": "../../client/connection/tsconfig.host.json"
+    },
+    {
       "path": "../../util/launch-environment"
     },
     {

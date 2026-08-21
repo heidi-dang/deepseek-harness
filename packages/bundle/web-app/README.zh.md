@@ -8,6 +8,8 @@ dsh 浏览器表层组合包。[`cordis.patch.yml`](cordis.patch.yml) 叠加在 
 
 Web 使用共享的有界 normal 默认值，在首次请求后最多再重试五次符合条件的失败。`deepseek-official` 与由 settings 新增的 pi-ai 路由在省略 `retryPolicy` 时使用该默认值；显式提供方策略仍然优先。Web 不再增加重试专用的组合覆盖，因此非 Web profile 的省略行为与之相同。
 
+当服务器绑定 `0.0.0.0` 时，`web-runtime` 行会采样本机非回环的 LAN IPv4 字面量，**并**自动发现宿主的 Tailscale 身份（其 `100.x` 地址、任意 IPv6 地址，以及 `<device>.ts.net` 魔名 DNS 名）注入 `/api` 浏览器信任栅栏。因此另一台 Tailscale 设备上的浏览器无需手动 `--trusted-host` 即可访问 GUI；`--trusted-host` 仍用于声明自动发现遗漏的权威（例如通过非魔名 DNS 名访问的 Tailscale 设备）。
+
 ## 模型体验
 
 ### Harness 源码与 Web 表层上下文
@@ -27,7 +29,7 @@ Web 使用共享的有界 normal 默认值，在首次请求后最多再重试�
 ## 已知限制与延期工作
 
 - **前端 dist 必须已构建**：对 dist 的 `require.resolve` 在激活时明确报错并给出构建提示；没有从源码直接服务的回退路径。
-- **`lanAddresses` 是启动期快照**：启动后的网卡变化不会重新公告；打印的 LAN URL 始终与配置的信任栅栏一致。
+- **`lanAddresses` 是启动期快照**：启动后的网卡变化（含 Tailscale 连接/断开）不会重新公告；打印的 LAN URL 始终与配置的信任栅栏一致。在 Tailscale 首次连上之后重启 `dsh web` 才会信任其地址。
 - **只观测交接启动**：平台 opener 接受 spawn 后即结束观察，但 Windows 会等待其短生命周期 PowerShell launcher 退出；之后的浏览器退出不会上报，已打印 URL 仍是手动访问的回退路径。
 - **SSH 转发持有浏览器 URL**：打印出的规范 URL 指向远端宿主机 loopback 端点；自动交接会被跳过，SSH 客户端或编辑器必须暴露并打开其本地转发地址。
 - **浏览器命令覆盖只能来自启动环境**：被发现的 `.env` 不得设置 `BROWSER`；只有继承值可以抵达会读取该变量的 opener 路径，避免 checkout 为自动交接选择可执行文件。

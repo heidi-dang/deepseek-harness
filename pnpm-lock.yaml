@@ -1535,6 +1535,9 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:^
         version: link:../../core/tools
+      '@deepseek-ai/dsh-uuid':
+        specifier: workspace:^
+        version: link:../../util/uuid
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -1943,6 +1946,9 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:^
         version: link:../../core/tools
+      '@deepseek-ai/dsh-uuid':
+        specifier: workspace:^
+        version: link:../../util/uuid
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
@@ -5020,6 +5026,9 @@ importers:
       '@deepseek-ai/dsh-user-questions':
         specifier: workspace:^
         version: link:../../interaction/user-questions
+      '@deepseek-ai/dsh-uuid':
+        specifier: workspace:^
+        version: link:../../util/uuid
       '@deepseek-ai/dsh-workspace':
         specifier: workspace:^
         version: link:../../workspace/workspace
@@ -8292,6 +8301,15 @@ importers:
         version: link:../../runtime-diagnostics/invariants
 
   packages/util/timeout:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/util/uuid:
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
