@@ -4,9 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vitepress dev . --host 127.0.0.1 --port 5173",
+    "dev": "vitepress dev . --host --port 3080",
     "build": "vitepress build .",
-    "preview": "vitepress preview . --host 127.0.0.1 --port 4173"
+    "preview": "vitepress preview . --host --port 4173"
   },
   "devDependencies": {
     "@braintree/sanitize-url": "7.1.2",

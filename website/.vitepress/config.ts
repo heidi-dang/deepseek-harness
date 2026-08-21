@@ -102,6 +102,23 @@ function moduleNav(locale: DocsLocale): DefaultTheme.NavItem[] {
   ]
 }
 
+/**
+ * Hosts Vite permits for dev/preview connections, beyond its built-in
+ * localhost and IP allowances. Tailscale serves a device's dev server to
+ * another tailnet device under a `<name>.ts.net` hostname; without it the host
+ * check returns 403 and the HMR transport cannot connect. `DOCS_ALLOWED_HOSTS`
+ * appends comma-separated hosts — a leading dot matches a suffix.
+ *
+ * @returns The allowed-hosts list, or `true` when `DOCS_ALLOWED_HOSTS=*`.
+ */
+function resolveAllowedHosts(): string[] | true {
+  const extra = process.env.DOCS_ALLOWED_HOSTS
+  if (extra === '*') return true
+  const hosts = ['.ts.net']
+  if (extra) hosts.push(...extra.split(',').map(host => host.trim()).filter(Boolean))
+  return hosts
+}
+
 function watchCanonicalDocs(server: ViteDevServer): void {
   const sources = docsSourceFiles()
   server.watcher.add(sources)
@@ -319,6 +336,10 @@ export default withMermaid({
     // `srcDir` puts the Vite root inside the disposable generated tree, whose
     // own `public/` no tracked asset can live in.
     publicDir: resolve(import.meta.dirname, '../public'),
+    // Allow reaching the dev/preview server from another device on the same
+    // Tailscale tailnet; see {@link resolveAllowedHosts}.
+    server: { allowedHosts: resolveAllowedHosts() },
+    preview: { allowedHosts: resolveAllowedHosts() },
     plugins: [
       {
         name: 'deepseek-harness-doc-projector',
